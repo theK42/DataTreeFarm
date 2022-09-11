@@ -1,0 +1,4 @@
+[submodule "KEngineCore"]
+	path = KEngineCore
+	url = git@github.com:theK42/KEngineCore.git
+	branch = KRBSG

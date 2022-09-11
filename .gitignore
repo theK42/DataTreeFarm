@@ -1,0 +1,5 @@
+node_modules/
+crash.log
+credentials.json
+token.json
+build/
