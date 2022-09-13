@@ -41,6 +41,10 @@ namespace KEngineCoreNode
 		static void HasBranch(const v8::FunctionCallbackInfo<v8::Value>& args);
 		static void GetBranch(const v8::FunctionCallbackInfo<v8::Value>& args);
 
+		static void WriteToFile(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+
+
 		bool					  mOwned{ false };
 		KEngineCore::DataSapling* mSapling{ nullptr };
 		static v8::Persistent<v8::Function> constructor;

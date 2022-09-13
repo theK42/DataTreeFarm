@@ -2,6 +2,8 @@
 #include "DataTree.h"
 #include <nan.h>
 #include <node.h>
+#include <iostream>
+#include <fstream>
 
 using namespace v8;
 
@@ -58,6 +60,8 @@ namespace KEngineCoreNode
         
         NODE_SET_PROTOTYPE_METHOD(tpl, "hasBranch", HasBranch);
         NODE_SET_PROTOTYPE_METHOD(tpl, "getBranch", GetBranch);
+
+        NODE_SET_PROTOTYPE_METHOD(tpl, "writeToFile", WriteToFile);
 
 //        Local<Function> constructor = tpl->GetFunction(context).ToLocalChecked();
 
@@ -255,6 +259,22 @@ namespace KEngineCoreNode
             Local<Function> cons = Local<Function>::New(isolate, DataSaplingWrapper::constructor);
             Local<Object> instance = cons->NewInstance(context, argc, argv).ToLocalChecked();
             args.GetReturnValue().Set(instance);
+        }
+    }
+
+    void DataSaplingWrapper::WriteToFile(const v8::FunctionCallbackInfo<v8::Value>& args)
+    {
+        Isolate* isolate = args.GetIsolate();
+        Local<Context> context = isolate->GetCurrentContext();
+
+        if (args[0]->IsString()) {
+            Nan::Utf8String filename(args[0]);
+
+            std::ofstream stream((const char*)(*filename), std::ios::binary);
+
+            DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
+            obj->mSapling->WriteToStream(stream);
+            stream.close();
         }
     }
 

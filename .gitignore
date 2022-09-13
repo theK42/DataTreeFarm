@@ -3,3 +3,4 @@ crash.log
 credentials.json
 token.json
 build/
+KRBSG.dat

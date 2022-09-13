@@ -18,10 +18,12 @@ const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 
 const spreadsheetId = process.argv[2];
-if (!spreadsheetId) {
-    console.log("Usage : node . [spreadsheetId]");
+const outputFilename = process.argv[3];
+if (!spreadsheetId || !outputFilename) {
+    console.log("Usage : node . [spreadsheetId] [outputFile]");
     process.exit(9);
 }
+
 
 
 /**
@@ -103,24 +105,22 @@ async function growTree(auth) {
             root.branchReady(mainBranch);
 
             var branchHeader = mainBranch.createBranchHeader();
-            //console.log(sheetName);
 
             var sheetMeta = [];
             sheetsMeta[sheetName] = sheetMeta;
-            var typeHeaderRow = sheet.data[0].rowData[0];
-            var nameHeaderRow = sheet.data[0].rowData[1];
+            var typeHeaderRow = sheet.data[0].rowData[0].values.map(a => a.effectiveValue.stringValue);
+            var nameHeaderRow = sheet.data[0].rowData[1].values.map(a => a.effectiveValue.stringValue);
 
-            for (var index = 0; index < typeHeaderRow.length && index < nameHeaderRow.length; i++) {
-                var ref;
+            for (var index = 0; index < typeHeaderRow.length && index < nameHeaderRow.length; index++) {
+                var ref = undefined;
                 if (typeHeaderRow[index].startsWith("Ref")) {
                     var firstIndex = 4;
                     var lastIndex = typeHeaderRow[index].length - 1;
                     ref = typeHeaderRow[index].slice(firstIndex, lastIndex);
-                    console.log("Ref is: " + ref);
                 }
                 const type = ref ? "Hash" : typeHeaderRow[index];
                 const name = nameHeaderRow[index];
-                sheetMeta.push({ type: type, name: name, ref: ref , refList: ref ? [] : undefined});
+                sheetMeta.push({ type: type, name: name, ref: ref, refList: ref ? [] : undefined });
                 switch (type) {
                     case "Key":
                         branchHeader.addHash(name);
@@ -140,6 +140,9 @@ async function growTree(auth) {
                         break;
                     case "String":
                         branchHeader.addString(name);
+                        break;
+                    default:
+                        console.warn("Unrecognized header type: " + type);
                         break;
                 }
             }
@@ -195,7 +198,7 @@ async function growTree(auth) {
                             console.warn("missing Sheet ref: " + refBranchName);
                         } else {
                             var referencedBranch = root.getBranch("sheetName", refBranchName);
-                            sheetMeta.refList.forEach((refString) => {
+                            col.refList.forEach((refString) => {
                                 if (!referencedBranch.hasBranch(refKey, refString)) {
                                     console.warn("missing ref.  Sheet: " + refBranchName + " Key: " + refKey + " Value: " + refString);
                                 }
@@ -205,46 +208,13 @@ async function growTree(auth) {
                 });
             });
 
-            /*rows.forEach((row) => {
-                var values = row.values.map(a => a.effectiveValue);
-                console.log(values);
-            });*/
         });
 
-        // TODO: Change code below to process the `response` object:
-        //console.log(JSON.stringify(response, null, 2));
+        root.writeToFile(outputFilename);
+
     } catch (err) {
         console.error(err);
     }
-    /*
-
-
-    const res1 = await sheets.spreadsheets.get({
-        spreadSheetId: spreadSheetId
-    });
-
-    var sheetNames = [];
-    const sheetNames = res.Sheets;
-    foreach(Sheet sheet in response1.Sheets)
-    {
-        Console.WriteLine("Sheet found: " + sheet.Properties.Title);
-        sheetNames.Add(sheet.Properties.Title);
-    }
-
-    const res = await sheets.spreadsheets.values.get({
-        spreadsheetId: spreadSheetId,
-        range: 'Class Data!A2:E',
-    });
-    const rows = res.data.values;
-    if (!rows || rows.length === 0) {
-        console.log('No data found.');
-        return;
-    }
-    console.log('Name, Major:');
-    rows.forEach((row) => {
-        // Print columns A and E, which correspond to indices 0 and 4.
-        console.log(`${row[0]}, ${row[4]}`);
-    });*/
 }
 
 authorize().then(growTree).catch(console.error);
