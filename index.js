@@ -113,14 +113,29 @@ async function growTree(auth) {
 
             for (var index = 0; index < typeHeaderRow.length && index < nameHeaderRow.length; index++) {
                 var ref = undefined;
-                if (typeHeaderRow[index].startsWith("Ref")) {
+                var header = undefined;
+                var type = typeHeaderRow[index];
+
+                if (type.startsWith("Ref")) {
                     var firstIndex = 4;
                     var lastIndex = typeHeaderRow[index].length - 1;
                     ref = typeHeaderRow[index].slice(firstIndex, lastIndex);
+                    type = "Hash";
                 }
-                const type = ref ? "Hash" : typeHeaderRow[index];
+
+                if (type.startsWith("[")) {
+                    header = JSON.parse(type)[0];
+                    type = "List";
+                }
+
+                if (type.startsWith("{")) {
+                    header = JSON.parse(type);
+                    type = "Tree";
+                }                
+
                 const name = nameHeaderRow[index];
-                sheetMeta.push({ type: type, name: name, ref: ref, refList: ref ? [] : undefined });
+                sheetMeta.push({ type: type, name: name, ref: ref, refList: ref ? [] : undefined, header});
+
                 switch (type) {
                     case "Key":
                         branchHeader.addHash(name);
@@ -141,12 +156,43 @@ async function growTree(auth) {
                     case "String":
                         branchHeader.addString(name);
                         break;
+                    case "List":
+                    case "Tree":
+                        break;
                     default:
                         console.warn("Unrecognized header type: " + type);
                         break;
                 }
             }
             var rows = sheet.data[0].rowData.slice(2);
+
+            var setValue;
+            setValue = function (branch, type, key, value) {
+                switch (type) {
+                    case "Key":
+                    case "Hash":
+                        branch.setHash(key, value);
+                        break;
+                    case "Int":
+                        branch.setInt(key, value);
+                        break;
+                    case "Float":
+                        branch.setFloat(key, value);
+                        break;
+                    case "String":
+                        branch.setString(key, value);
+                        break;
+                    case "Bool":
+                        branch.setBool(key, value);
+                        break;
+                    case "Tree":
+                    case "List":
+                        //TODO: Implement
+                        console.warn("subtrees in json not yet implemented.");
+                        break;
+                }
+                
+            }
 
             rows.forEach((row) => {
                 var values = row.values.map(a => a.effectiveValue);
@@ -158,19 +204,31 @@ async function growTree(auth) {
                     switch (sheetMeta[index].type) {
                         case "Key":
                         case "Hash":
-                            branch.setHash(name, valueChunk.stringValue);
-                            if (sheetMeta[index].ref) {
-                                sheetMeta[index].refList.push(valueChunk.stringValue);
+                            if (valueChunk) {
+                                branch.setHash(name, valueChunk.stringValue);
+                                if (sheetMeta[index].ref) {
+                                    sheetMeta[index].refList.push(valueChunk.stringValue);
+                                }
+                            } else {
+                                console.warn("empty hash in sheet " + sheetName + " column " + name);
                             }
                             break;
                         case "Int":
-                            if (!Number.isInteger(valueChunk.numberValue)) {
-                                console.warn("Integer cell has unexpected value " + valueChunk.numberValue);
+                            if (valueChunk) {
+                                if (!Number.isInteger(valueChunk.numberValue)) {
+                                    console.warn("Integer cell has unexpected value " + valueChunk.numberValue);
+                                }
+                                branch.setInt(name, valueChunk.numberValue);
+                            } else {
+                                branch.setInt(name, 0);
                             }
-                            branch.setInt(name, valueChunk.numberValue);
                             break;
                         case "Float":
-                            branch.setFloat(name, valueChunk.numberValue);
+                            if (valueChunk) {
+                                branch.setFloat(name, valueChunk.numberValue);
+                            } else {
+                                branch.setFloat(name, 0.0);
+                            }
                             break;
                         case "Bool":
                             var isFalse = valueChunk.stringValue == "false" || valueChunk.stringValue == "FALSE";
@@ -181,7 +239,47 @@ async function growTree(auth) {
                             branch.setBool(name, !isFalse && isTruthy);
                             break;
                         case "String":
-                            branch.setString(name, valueChunk.stringValue);
+                            if (valueChunk) {
+                                branch.setString(name, valueChunk.stringValue);
+                            } else {
+                                branch.setString(name, "");
+                            }
+                            break;
+                        case "Tree":
+                            branch.addKey("branchName");
+                            var twigBlob = JSON.parse(valueChunk.stringValue);
+                            var twig = branch.growBranch();
+                            twig.setHash("branchName", name);
+                            twigKeys = Object.keys(sheetMeta[index].header);
+                            twigKeys.forEach((key) => {
+                                if (twigBlob[key] != undefined) {
+                                    var type = sheetMeta[index].header[key];
+                                    setValue(twig, type, key, value);
+                                }
+                            });
+                            branch.branchReady(twig);
+                            break;
+                        case "List":
+                            branch.addKey("branchName");
+                            var twig = branch.growBranch();
+                            twig.setHash(name);
+                            var header = sheetMeta[index].header;
+                            var twigBlob = JSON.parse(valueChunk.stringValue);
+                            if (typeof header == "string") {
+                                twigBlob.forEach((value) => {
+                                    const type = header;
+                                    const key = null;
+                                    setValue(twig, type, key, value);
+                                });
+                            }
+                            else {
+                                Object.keys(twigBlob).forEach((key) => {
+                                    const value = twigBlob[key];
+                                    const type = header[key];
+                                    setValue(twig, type, key, value);
+                                });
+                            }
+                            branch.branchReady(twig);
                             break;
                     }
                 }

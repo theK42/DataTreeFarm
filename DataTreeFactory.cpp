@@ -145,14 +145,19 @@ namespace KEngineCoreNode
     void DataSaplingWrapper::SetInt(const FunctionCallbackInfo<Value>& args) {
         Isolate* isolate = args.GetIsolate();
         Local<Context> context = isolate->GetCurrentContext();
-
-        if (args[0]->IsString() && args[1]->IsNumber()) {
-            Nan::Utf8String key(args[0]);
+        if (args[1]->IsNumber()) {
             double value = args[1]->IsUndefined() ?
                 0 : args[1]->NumberValue(context).FromMaybe(0);
 
             DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
-            obj->mSapling->SetInt((const char*)(*key), (int)(value));
+
+            if (args[0]->IsString()) {
+                Nan::Utf8String key(args[0]);
+                obj->mSapling->SetInt((const char*)(*key), (int)(value));
+            }
+            else if (args[0]->IsNull()) {
+                obj->mSapling->AddInt((int)value);
+            }
         }
     }
 
@@ -160,13 +165,19 @@ namespace KEngineCoreNode
         Isolate* isolate = args.GetIsolate();
         Local<Context> context = isolate->GetCurrentContext();
 
-        if (args[0]->IsString() && args[1]->IsNumber()) {
-            Nan::Utf8String key(args[1]);
+        if (args[1]->IsNumber()) {
             double value = args[1]->IsUndefined() ?
                 0 : args[1]->NumberValue(context).FromMaybe(0);
 
             DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
-            obj->mSapling->SetFloat((const char*)(*key), (float)(value));
+
+            if (args[0]->IsString()) {
+                Nan::Utf8String key(args[0]);
+                obj->mSapling->SetFloat((const char*)(*key), (int)(value));
+            }
+            else if (args[0]->IsNull()) {
+                obj->mSapling->AddFloat((float)value);
+            }
         }
     }
 
@@ -181,6 +192,10 @@ namespace KEngineCoreNode
 
             DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
             obj->mSapling->SetFloat((const char*)(*key), value);
+        }
+        else
+        {
+            assert(false); //Not implemented
         }
     }
 
