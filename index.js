@@ -106,6 +106,43 @@ async function growTree(auth) {
 
             var branchHeader = mainBranch.createBranchHeader();
 
+            function addHeaderColumn(headerObj, name, type) {
+                switch (type) {
+                    case "Key":
+                    case "key":
+                        headerObj.addHash(name);
+                        mainBranch.addKey(name);
+                        break;
+                    case "Hash":
+                    case "hash":
+                        headerObj.addHash(name);
+                        console.log("adding a hash");
+                        break;
+                    case "Int":
+                    case "int":
+                        headerObj.addInt(name);
+                        break;
+                    case "Float":
+                    case "float":
+                        headerObj.addFloat(name);
+                        break;
+                    case "Bool":
+                    case "bool":
+                        headerObj.addBool(name);
+                        break;
+                    case "String":
+                    case "string":
+                        headerObj.addString(name);
+                        break;
+                    case "List":
+                    case "Tree":
+                        break;
+                    default:
+                        console.warn("Unrecognized header type: " + type);
+                        break;
+                }
+            };
+
             var sheetMeta = [];
             sheetsMeta[sheetName] = sheetMeta;
             var typeHeaderRow = sheet.data[0].rowData[0].values.map(a => a.effectiveValue.stringValue);
@@ -136,33 +173,10 @@ async function growTree(auth) {
                 const name = nameHeaderRow[index];
                 sheetMeta.push({ type: type, name: name, ref: ref, refList: ref ? [] : undefined, header});
 
-                switch (type) {
-                    case "Key":
-                        branchHeader.addHash(name);
-                        mainBranch.addKey(name);
-                        break;
-                    case "Hash":
-                        branchHeader.addHash(name);
-                        break;
-                    case "Int":
-                        branchHeader.addInt(name);
-                        break;
-                    case "Float":
-                        branchHeader.addFloat(name);
-                        break;
-                    case "Bool":
-                        branchHeader.addBool(name);
-                        break;
-                    case "String":
-                        branchHeader.addString(name);
-                        break;
-                    case "List":
-                    case "Tree":
-                        break;
-                    default:
-                        console.warn("Unrecognized header type: " + type);
-                        break;
-                }
+
+
+                addHeaderColumn(branchHeader, name, type);
+
             }
             var rows = sheet.data[0].rowData.slice(2);
 
@@ -170,19 +184,25 @@ async function growTree(auth) {
             setValue = function (branch, type, key, value) {
                 switch (type) {
                     case "Key":
+                    case "key":
                     case "Hash":
+                    case "hash":
                         branch.setHash(key, value);
                         break;
                     case "Int":
+                    case "int":
                         branch.setInt(key, value);
                         break;
                     case "Float":
+                    case "float":
                         branch.setFloat(key, value);
                         break;
                     case "String":
+                    case "string":
                         branch.setString(key, value);
                         break;
                     case "Bool":
+                    case "bool":
                         branch.setBool(key, value);
                         break;
                     case "Tree":
@@ -190,6 +210,8 @@ async function growTree(auth) {
                         //TODO: Implement
                         console.warn("subtrees in json not yet implemented.");
                         break;
+                    default:
+                        console.warn("unknown type!" + type)
                 }
                 
             }
@@ -262,7 +284,7 @@ async function growTree(auth) {
                         case "List":
                             branch.addKey("branchName");
                             var twig = branch.growBranch();
-                            twig.setHash(name);
+                            twig.setHash("branchName", name);
                             var header = sheetMeta[index].header;
                             var twigBlob = JSON.parse(valueChunk.stringValue);
                             if (typeof header == "string") {
@@ -273,11 +295,21 @@ async function growTree(auth) {
                                 });
                             }
                             else {
-                                Object.keys(twigBlob).forEach((key) => {
-                                    const value = twigBlob[key];
-                                    const type = header[key];
-                                    setValue(twig, type, key, value);
+                                var leafHeader = twig.createBranchHeader();
+
+                                Object.keys(header).forEach((key) => {
+                                    addHeaderColumn(leafHeader, key, header[key]);
                                 });
+
+                                twigBlob.forEach((leafBlob) => {
+                                    var leaf = twig.growBranch();
+                                    Object.keys(leafBlob).forEach((key) => {
+                                        const value = leafBlob[key];
+                                        const type = header[key];
+                                        setValue(leaf, type, key, value);
+                                    });
+                                    twig.branchReady(leaf);
+                                });       
                             }
                             branch.branchReady(twig);
                             break;
