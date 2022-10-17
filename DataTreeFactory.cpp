@@ -173,7 +173,7 @@ namespace KEngineCoreNode
 
             if (args[0]->IsString()) {
                 Nan::Utf8String key(args[0]);
-                obj->mSapling->SetFloat((const char*)(*key), (int)(value));
+                obj->mSapling->SetFloat((const char*)(*key), (float)(value));
             }
             else if (args[0]->IsNull()) {
                 obj->mSapling->AddFloat((float)value);
