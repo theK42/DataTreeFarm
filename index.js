@@ -79,6 +79,11 @@ async function authorize() {
     return client;
 }
 
+
+async function deauthorize() {
+    fs.unlink(TOKEN_PATH);
+}
+
 /**
  * Gets all sheets from the spreadsheet and parses them to create a DataTree.
  * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
@@ -93,8 +98,10 @@ async function growTree(auth) {
         auth: auth
     };
 
+    const response = (await sheets.spreadsheets.get(request)).data; //Outside the try/catch so the promise will be rejected
+    
     try {
-        const response = (await sheets.spreadsheets.get(request)).data;
+        
         let root = new KEngineCore.DataSapling();
         root.addKey("sheetName");
         var sheetsMeta = {};
@@ -347,4 +354,5 @@ async function growTree(auth) {
     }
 }
 
-authorize().then(growTree).catch(console.error);
+
+authorize().then(growTree).catch(deauthorize).then(authorize).then(growTree).catch(console.error);
