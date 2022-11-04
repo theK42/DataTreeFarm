@@ -268,7 +268,7 @@ async function growTree(auth) {
                             branch.setBool(name, !isFalse && isTruthy);
                             break;
                         case "String":
-                            if (valueChunk) {
+                            if (valueChunk && valueChunk.stringValue) {
                                 branch.setString(name, valueChunk.stringValue);
                             } else {
                                 branch.setString(name, "");
@@ -324,27 +324,27 @@ async function growTree(auth) {
                 }
                 mainBranch.branchReady(branch);
             });
+        });
 
-            Object.keys(sheetsMeta).forEach((sheetName) => {
-                var sheetMeta = sheetsMeta[sheetName];
-                sheetMeta.forEach((col) => {
-                    if (col.ref) {
-                        var refBranchName = col.ref.split(",")[0];
-                        var refKey = col.ref.split(",")[1];
-                        if (!root.hasBranch("sheetName", refBranchName)) {
-                            console.warn("missing Sheet ref: " + refBranchName);
-                        } else {
-                            var referencedBranch = root.getBranch("sheetName", refBranchName);
-                            col.refList.forEach((refString) => {
-                                if (!referencedBranch.hasBranch(refKey, refString)) {
-                                    console.warn("missing ref.  Sheet: " + refBranchName + " Key: " + refKey + " Value: " + refString);
-                                }
-                            });
-                        }
+
+        Object.keys(sheetsMeta).forEach((sheetName) => {
+            var sheetMeta = sheetsMeta[sheetName];
+            sheetMeta.forEach((col) => {
+                if (col.ref) {
+                    var refBranchName = col.ref.split(",")[0];
+                    var refKey = col.ref.split(",")[1];
+                    if (!root.hasBranch("sheetName", refBranchName)) {
+                        console.warn("missing Sheet ref: " + refBranchName);
+                    } else {
+                        var referencedBranch = root.getBranch("sheetName", refBranchName);
+                        col.refList.forEach((refString) => {
+                            if (!referencedBranch.hasBranch(refKey, refString)) {
+                                console.warn("missing ref.  Sheet: " + refBranchName + " Key: " + refKey + " Value: " + refString);
+                            }
+                        });
                     }
-                });
+                }
             });
-
         });
 
         root.writeToFile(outputFilename);
