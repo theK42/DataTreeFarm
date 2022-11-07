@@ -123,7 +123,6 @@ async function growTree(auth) {
                     case "Hash":
                     case "hash":
                         headerObj.addHash(name);
-                        console.log("adding a hash");
                         break;
                     case "Int":
                     case "int":
@@ -260,8 +259,8 @@ async function growTree(auth) {
                             }
                             break;
                         case "Bool":
-                            var isFalse = valueChunk.stringValue == "false" || valueChunk.stringValue == "FALSE";
-                            var isTruthy = valueChunk.stringValue || valueChunk.numberValue;
+                            var isFalse = valueChunk.stringValue == "false" || valueChunk.stringValue == "FALSE" || valueChunk.numberValue == 0 || valueChunk.boolValue == false;
+                            var isTruthy = !!valueChunk.stringValue || !!valueChunk.numberValue || valueChunk.boolValue;
                             if (valueChunk.stringValue && valueChunk.stringValue != "true" && valueChunk.stringValue != "TRUE" && valueChunk.stringValue != "false" && valueChunk.stringValue != "FALSE") {
                                 console.warn("Boolean cell has unexpected string " + valueChunk.stringValue + ", treated as 'true'");
                             }

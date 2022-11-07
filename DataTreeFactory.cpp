@@ -191,10 +191,11 @@ namespace KEngineCoreNode
                 false : args[1]->BooleanValue(isolate);
 
             DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
-            obj->mSapling->SetFloat((const char*)(*key), value);
+            obj->mSapling->SetBool((const char*)(*key), value);
         }
         else
         {
+            fprintf(std::errc, "SetBool with incorrect parameters, possibly attempting a list of booleans?");
             assert(false); //Not implemented
         }
     }
