@@ -232,6 +232,8 @@ async function growTree(auth) {
                     switch (sheetMeta[index].type) {
                         case "Key":
                         case "Hash":
+                        case "key":
+                        case "hash":
                             if (valueChunk) {
                                 branch.setHash(name, valueChunk.stringValue);
                                 if (sheetMeta[index].ref) {
@@ -242,6 +244,7 @@ async function growTree(auth) {
                             }
                             break;
                         case "Int":
+                        case "int":
                             if (valueChunk) {
                                 if (!Number.isInteger(valueChunk.numberValue)) {
                                     console.warn("Integer cell has unexpected value " + valueChunk.numberValue);
@@ -252,6 +255,7 @@ async function growTree(auth) {
                             }
                             break;
                         case "Float":
+                        case "float":
                             if (valueChunk) {
                                 branch.setFloat(name, valueChunk.numberValue);
                             } else {
@@ -259,6 +263,7 @@ async function growTree(auth) {
                             }
                             break;
                         case "Bool":
+                        case "bool":
                             var isFalse = valueChunk.stringValue == "false" || valueChunk.stringValue == "FALSE" || valueChunk.numberValue == 0 || valueChunk.boolValue == false;
                             var isTruthy = !!valueChunk.stringValue || !!valueChunk.numberValue || valueChunk.boolValue;
                             if (valueChunk.stringValue && valueChunk.stringValue != "true" && valueChunk.stringValue != "TRUE" && valueChunk.stringValue != "false" && valueChunk.stringValue != "FALSE") {
@@ -267,6 +272,7 @@ async function growTree(auth) {
                             branch.setBool(name, !isFalse && isTruthy);
                             break;
                         case "String":
+                        case "string":
                             if (valueChunk && valueChunk.stringValue) {
                                 branch.setString(name, valueChunk.stringValue);
                             } else {
@@ -274,6 +280,7 @@ async function growTree(auth) {
                             }
                             break;
                         case "Tree":
+                        case "tree":
                             branch.addKey("branchName");
                             var twigBlob = JSON.parse(valueChunk.stringValue);
                             var twig = branch.growBranch();
@@ -288,6 +295,7 @@ async function growTree(auth) {
                             branch.branchReady(twig);
                             break;
                         case "List":
+                        case "list":
                             branch.addKey("branchName");
                             var twig = branch.growBranch();
                             twig.setHash("branchName", name);
