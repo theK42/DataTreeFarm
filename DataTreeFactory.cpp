@@ -133,12 +133,17 @@ namespace KEngineCoreNode
     void DataSaplingWrapper::SetHash(const FunctionCallbackInfo<Value>& args) {
         Isolate* isolate = args.GetIsolate();
 
+        DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
+
         if (args[0]->IsString() && args[1]->IsString()) {
             Nan::Utf8String key(args[0]);
             Nan::Utf8String value(args[1]);
 
-            DataSaplingWrapper* obj = ObjectWrap::Unwrap<DataSaplingWrapper>(args.Holder());
             obj->mSapling->SetHash((const char*)(*key), (const char*)(*value));
+        }
+        else if (args[0]->IsNull() && args[1]->IsString()) {
+            Nan::Utf8String value(args[1]);
+            obj->mSapling->AddHash((const char*)(*value));
         }
     }    
     
@@ -195,7 +200,7 @@ namespace KEngineCoreNode
         }
         else
         {
-            fprintf(std::errc, "SetBool with incorrect parameters, possibly attempting a list of booleans?");
+            fprintf(stderr, "SetBool with incorrect parameters, possibly attempting a list of booleans?");
             assert(false); //Not implemented
         }
     }
