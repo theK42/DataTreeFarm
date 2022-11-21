@@ -42,5 +42,7 @@ function(add_submodule submodule)
     add_subdirectory(${submodule})
 endfunction()
 
+set (KENGINE_CORE_DELETE_STRINGS_RELEASE OFF CACHE BOOL "Delete strings from hashes in release builds" FORCE)
 add_submodule(KEngineCore)
 target_link_libraries(${PROJECT_NAME} KEngineCore)
+
